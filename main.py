@@ -5,7 +5,7 @@ model = YOLO('yolov8n.pt')
 
 vehicle_classes = [2, 3, 5, 7]  
 
-cap = cv2.VideoCapture('traffic_video.mp4')
+cap = cv2.VideoCapture('./test_videos/traffic2.mp4')
 
 while True:
     ret, frame = cap.read()
@@ -15,7 +15,6 @@ while True:
     results = model(frame, stream=True)
     
     vehicle_count = 0
-    
    
     for result in results:
         boxes = result.boxes
