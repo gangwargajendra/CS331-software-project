@@ -1,6 +1,7 @@
 import cv2
 from ultralytics import YOLO
 import time
+from datetime import datetime
 from engine import SmartTrafficSignal
 
 model = YOLO('yolov8n.pt')
@@ -10,6 +11,11 @@ vehicle_classes = [2, 3, 5, 7]
 emergency_classes = [6] 
 
 cap = cv2.VideoCapture('traffic_video.mp4')
+
+log_file = open('traffic_logs.csv', mode='a', newline='')
+log_writer = csv.writer(log_file)
+# Write header only if file is empty
+log_writer.writerow(['Timestamp', 'Vehicles', 'Green_Duration', 'Emergency_Mode'])
 
 print("--- Smart Traffic System with YOLO Integration Started ---")
 
@@ -49,6 +55,14 @@ while True:
 
     green_light_duration = traffic_engine.calculate_duration(counts)
 
+    if int(cap.get(cv2.CAP_PROP_POS_FRAMES)) % 30 == 0:
+        log_writer.writerow([
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            counts['cars'] + counts['trucks'] + counts['bikes'],
+            green_light_duration,
+            counts['emergency']
+        ])
+
     cv2.rectangle(frame, (0, 0), (350, 150), (30, 30, 30), -1)
     cv2.putText(frame, f"Detected Vehicles: {counts['cars'] + counts['trucks'] + counts['bikes']}", 
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
@@ -66,5 +80,6 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
+log_file.close()
 cap.release()
 cv2.destroyAllWindows()
