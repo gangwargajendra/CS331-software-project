@@ -1,0 +1,21 @@
+# Smart Traffic Signal System - Requirements
+# Python 3.8 or higher required
+
+# Core Dependencies
+opencv-python>=4.8.0         # Computer vision and video processing
+pillow>=10.0.0              # Image processing for GUI
+ultralytics>=8.0.0          # YOLOv8 model
+numpy>=1.24.0               # Numerical operations
+
+# Deep Learning (auto-installed with ultralytics)
+torch>=2.0.0                # PyTorch for YOLO
+torchvision>=0.15.0         # Vision utilities
+
+# GUI (usually pre-installed with Python)
+# tkinter                   # GUI framework (comes with Python)
+
+# Additional utilities (auto-installed)
+# matplotlib              # Plotting (ultralytics dependency)
+# scipy                   # Scientific computing
+# pyyaml                  # Configuration files
+# requests                # HTTP requests
