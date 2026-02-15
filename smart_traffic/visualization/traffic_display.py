@@ -1,22 +1,12 @@
-"""
-Traffic Display Module
-Uses Pygame to visualize the traffic simulation in fullscreen
-"""
-
 import pygame
 import config
 from traffic_signal import SignalState
 
 class TrafficDisplay:
-    """
-    Displays the intersection, signals, and vehicles using Pygame
-    """
-    
     def __init__(self):
         """Initialize Pygame display"""
         pygame.init()
         
-        # Get desktop resolution and create fullscreen window
         if config.FULLSCREEN:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         else:

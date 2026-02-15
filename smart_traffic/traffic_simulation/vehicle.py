@@ -1,22 +1,12 @@
-"""
-Vehicle Module
-Represents individual vehicles with types and IDs
-"""
-
 import config
 import random
 
 class Vehicle:
-    """
-    Represents a single vehicle at the intersection
-    """
-    
     # Class variable to track used license plates
     _used_plates = set()
     
     @staticmethod
     def generate_license_plate():
-        """Generate a unique license plate number"""
         while True:
             state = random.choice(config.LICENSE_PLATE_STATES)
             district = random.randint(10, 99)
@@ -29,14 +19,6 @@ class Vehicle:
                 return plate
     
     def __init__(self, side, position, vehicle_type):
-        """
-        Initialize a vehicle
-        
-        Args:
-            side (str): Which side the vehicle is on ("NORTH", "SOUTH", "EAST", "WEST")
-            position (int): Position in queue (0 = front of line)
-            vehicle_type (str): Type of vehicle ("CAR", "TRUCK", "BUS")
-        """
         self.side = side
         self.position = position
         self.vehicle_type = vehicle_type
@@ -61,7 +43,6 @@ class Vehicle:
         self._calculate_initial_position()
     
     def _calculate_initial_position(self, window_size=(1920, 1080)):
-        """Calculate vehicle's x, y coordinates based on side and position"""
         center_x = window_size[0] // 2
         center_y = window_size[1] // 2
         spacing = 60  # Space between vehicles
@@ -83,11 +64,9 @@ class Vehicle:
             self.y = center_y - 80
     
     def update_position_for_screen(self, window_size):
-        """Update position calculation based on actual window size"""
         self._calculate_initial_position(window_size)
     
     def move(self, window_size=(1920, 1080)):
-        """Move vehicle forward in its direction"""
         if self.crossed:
             return
         

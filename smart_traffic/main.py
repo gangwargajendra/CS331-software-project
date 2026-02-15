@@ -1,26 +1,18 @@
-"""
-Main Entry Point
-Run this file to start the traffic simulation
-"""
-
 from traffic_signal import SignalController
 from traffic_simulation import Intersection
 from visualization import TrafficDisplay
 
 def main():
-    """
-    Main function to run the traffic simulation
-    """
     print("=" * 70)
     print("Smart Traffic Signal Simulation")
     print("=" * 70)
     print("\nInitializing simulation...")
     print("Features:")
-    print("  ✓ Fullscreen display")
-    print("  ✓ Different vehicle types (Car, Truck, Bus)")
-    print("  ✓ Unique vehicle ID numbers")
-    print("  ✓ Sequential traffic signals")
-    print("  ✓ Real-time statistics")
+    print(" Fullscreen display")
+    print(" Different vehicle types (Car, Truck, Bus)")
+    print(" Unique vehicle ID numbers")
+    print(" Sequential traffic signals")
+    print("   Real-time statistics")
     print("\nControls:")
     print("  - ESC or Q: Exit simulation")
     print("  - F: Toggle fullscreen/windowed mode")

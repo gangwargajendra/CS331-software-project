@@ -1,8 +1,3 @@
-"""
-Configuration file for traffic simulation
-Contains all timing and display settings
-"""
-
 # Signal Timing (in seconds)
 GREEN_LIGHT_DURATION = 10      # How long signal stays green
 YELLOW_LIGHT_DURATION = 3      # How long signal stays yellow
