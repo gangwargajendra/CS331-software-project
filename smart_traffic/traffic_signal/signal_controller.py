@@ -1,20 +1,9 @@
-"""
-Signal Controller Module
-Controls traffic signal timing and state changes for all sides
-"""
-
 import time
 from .signal_state import SignalState
 from config import GREEN_LIGHT_DURATION, YELLOW_LIGHT_DURATION
 
 class SignalController:
-    """
-    Controls traffic signals for a 4-sided intersection
-    Cycles through sides sequentially: North -> East -> South -> West -> repeat
-    """
-    
     def __init__(self):
-        """Initialize signal controller with all sides starting as RED"""
         self.sides = ["NORTH", "SOUTH", "EAST", "WEST"]
         self.current_side_index = 0
         self.current_side = self.sides[0]
@@ -36,10 +25,6 @@ class SignalController:
         self.yellow_duration = YELLOW_LIGHT_DURATION
         
     def update(self):
-        """
-        Update signal states based on elapsed time
-        Sequential cycle: GREEN -> YELLOW -> RED, then next side becomes GREEN
-        """
         current_time = time.time()
         elapsed = current_time - self.last_change_time
         
@@ -63,27 +48,15 @@ class SignalController:
             self.last_change_time = current_time
     
     def get_signal_state(self, side):
-        """
-        Get current signal state for a specific side
-        
-        Args:
-            side (str): Side name ("NORTH", "SOUTH", "EAST", "WEST")
-            
-        Returns:
-            SignalState: Current state of the signal
-        """
         return self.signals.get(side, SignalState.RED)
     
     def is_green(self, side):
-        """Check if signal is green for given side"""
         return self.signals.get(side) == SignalState.GREEN
     
     def is_red(self, side):
-        """Check if signal is red for given side"""
         return self.signals.get(side) == SignalState.RED
     
     def get_remaining_time(self):
-        """Get remaining time for current state"""
         current_time = time.time()
         elapsed = current_time - self.last_change_time
         
