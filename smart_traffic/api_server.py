@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import atexit
 import functools
+import logging
 import threading
 import time
 import uuid
@@ -17,9 +18,8 @@ from flask_socketio import SocketIO, emit
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import config
-from smart_traffic_system import SmartIntersection, SmartSignalController 
+from smart_traffic_system import SmartIntersection, SmartSignalController
 from traffic_signal.signal_state import SignalState
-from visualization import TrafficDisplay
 
 try:
     import mysql.connector
@@ -30,7 +30,6 @@ else:
 
 
 SIDES = ["NORTH", "EAST", "SOUTH", "WEST"]
-SESSION_TIMEOUT_SECONDS = 15 * 60
 SIGNUP_ROLE_ALIASES = {
     "ADMIN": "SYSTEM_ADMIN",
     "SYSTEM_ADMIN": "SYSTEM_ADMIN",
@@ -492,6 +491,7 @@ class SimulationService:
     def _display_loop(self):
         display = None
         try:
+            from visualization import TrafficDisplay
             display = TrafficDisplay()
             self._log("Shared simulation UI window opened.")
 
@@ -501,12 +501,21 @@ class SimulationService:
 
                 with self._lock:
                     display.draw(self.intersection)
+        except Exception as exc:  # pragma: no cover - display is environment-specific
+            self._log(f"Desktop UI could not start: {exc}")
         finally:
             if display is not None:
                 display.cleanup()
             self._log("Shared simulation UI window closed.")
 
     def launch_backend_ui(self) -> dict[str, Any]:
+        if not config.ENABLE_DESKTOP_SIM_UI:
+            return {
+                "ok": False,
+                "alreadyRunning": False,
+                "message": "Desktop simulation UI is disabled in this environment.",
+            }
+
         if self._display_thread and self._display_thread.is_alive():
             return {
                 "ok": True,
@@ -569,6 +578,7 @@ class SimulationService:
             },
             "events": list(self.events),
             "timestamp": now,
+            "backendUiEnabled": bool(config.ENABLE_DESKTOP_SIM_UI),
             "backendUiRunning": self._display_thread is not None and self._display_thread.is_alive(),
             "vehicles": self._get_vehicles_locked(),
         }
@@ -649,7 +659,7 @@ class SimulationService:
             return None
 
         now = time.time()
-        if now - session["lastSeen"] > SESSION_TIMEOUT_SECONDS:
+        if now - session["lastSeen"] > config.SESSION_TIMEOUT_SECONDS:
             self._sessions.pop(token, None)
             return None
 
@@ -707,8 +717,20 @@ class SimulationService:
 
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(
+    app,
+    cors_allowed_origins=config.ALLOWED_ORIGIN,
+    async_mode="threading",
+    logger=not config.QUIET_HTTP_LOGS,
+    engineio_logger=not config.QUIET_HTTP_LOGS,
+)
 service = SimulationService(socketio)
+
+
+if config.QUIET_HTTP_LOGS:
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
+    logging.getLogger("engineio").setLevel(logging.ERROR)
+    logging.getLogger("socketio").setLevel(logging.ERROR)
 
 
 def _extract_token() -> str | None:
@@ -766,7 +788,7 @@ def _audit(action: str, details: str):
 
 @app.after_request
 def add_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Origin"] = config.ALLOWED_ORIGIN
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     return response
@@ -979,7 +1001,8 @@ def update_violation_action(violation_id: int):
     elif isinstance(raw_value, (int, float)):
         action_taken = bool(raw_value)
     elif isinstance(raw_value, str):
-        action_taken = raw_value.strip().lower() in {"1", "true", "yes", "taken"}
+        action_taken = raw_value.strip().lower() in {
+            "1", "true", "yes", "taken"}
     else:
         return jsonify({"ok": False, "error": "actionTaken is required"}), 400
 
@@ -1125,7 +1148,12 @@ def control_emergency():
 
 
 def main():
-    socketio.run(app, host="0.0.0.0", port=5000, debug=False)
+    socketio.run(
+        app,
+        host=config.API_HOST,
+        port=config.API_PORT,
+        debug=config.API_DEBUG,
+    )
 
 
 atexit.register(service.shutdown)

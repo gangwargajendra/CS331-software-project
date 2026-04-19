@@ -1,306 +1,136 @@
-# 🚦 Smart Traffic Signal Automation System
+# Smart Traffic Signal Automation
 
-## CS331 - Software Engineering Lab Project
+Software Engineering lab project with a Python backend simulation and a React frontend dashboard.
 
-### Complete Implementation with 4-Side Sequential Control
+Important clarification: this project does not use YOLO, live camera feeds, OpenCV video processing, or external traffic cameras. It is a software simulation with generated vehicle traffic and role-based control/monitoring.
 
----
+## Current Project Structure
 
-## 📋 Project Overview
-
-This system implements an **intelligent traffic signal controller** that:
-- Monitors traffic from **4 directions** simultaneously (North, South, East, West)
-- Uses **YOLOv8 AI model** for real-time vehicle detection
-- Implements **sequential signal control** with adaptive timing
-- Provides **early clearance** when traffic is low
-- Detects and prioritizes **emergency vehicles**
-- Features a **real-time GUI** showing all 4 sides
-
----
-
-## 🎯 Key Features
-
-### ✅ Intelligent Traffic Control
-- **Sequential Signaling**: One side gets green at a time, rotating clockwise
-- **Adaptive Timing**: 
-  - Maximum green time: **45 seconds**
-  - Minimum green time: **15 seconds** (safety)
-  - Early clearance: Switches early when traffic is low
-- **Yellow Light Transition**: 5 seconds yellow before red
-
-### ✅ Vehicle Detection
-- Detects **cars, trucks, buses, motorcycles**
-- Real-time vehicle counting
-- Emergency vehicle detection (ambulances, fire trucks)
-
-### ✅ Visual Interface
-- Live video display from all 4 sides
-- Traffic signal indicators (Red, Yellow, Green)
-- Vehicle count statistics
-- Countdown timers
-- Emergency alerts
-
-### ✅ Data Logging
-- All signal changes logged with timestamps
-- Vehicle count data saved to CSV
-- Emergency events tracked
-- Session statistics
-
----
-
-## 📁 Project Structure
-
-```
-smart_traffic_system/
-├── main.py                          # Main application entry point
-├── config.py                        # Configuration settings
-│
-├── models/                          # Core detection models
-│   ├── vehicle_detector.py         # YOLOv8 vehicle detection
-│   └── video_manager.py             # Multi-camera video handler
-│
-├── controllers/                     # Control logic
-│   └── traffic_controller.py       # Sequential signal controller
-│
-├── views/                          # User interface
-│   └── traffic_gui.py              # Tkinter GUI
-│
-├── utils/                          # Utilities
-│   └── logger.py                   # Event and data logging
-│
-└── logs/                           # Log files (auto-generated)
-    ├── traffic_system.log          # Text event log
-    └── traffic_data.csv            # CSV data log
+```text
+Traffic-Signal-Automation/
+├─ assignment/                    # Lab assignment files
+├─ smart_traffic/                 # Backend (Python + Flask + Socket.IO)
+└─ smart_traffic_signal_ui/       # Frontend (React + Vite + Tailwind)
 ```
 
----
+## System Overview
 
-## 🚀 How to Run
+### Backend (smart_traffic)
 
-### Prerequisites
+- Simulates a 4-side intersection: NORTH, EAST, SOUTH, WEST.
+- Uses signal phases (RED, YELLOW, GREEN) with configurable timings.
+- Supports emergency preemption and manual override.
+- Streams live state updates over Socket.IO.
+- Exposes REST APIs for auth, state, controls, and admin reports.
+- Stores users and traffic violations in MySQL.
+
+### Frontend (smart_traffic_signal_ui)
+
+- Role-based dashboard for:
+  - TRAFFIC_PERSONNEL
+  - SYSTEM_ADMIN
+  - VIEW_ONLY
+- Login/signup with token-based session usage.
+- Live traffic monitor and control panel.
+- Admin screens for system health, audit trail, and violation reports.
+
+## Main Features Implemented
+
+- 4-side smart traffic simulation.
+- Manual controls: pause/resume, reset, speed, timings.
+- Emergency trigger per side.
+- Role-based API authorization.
+- Audit trail logging for sensitive actions.
+- Violation report actions (mark taken, delete when allowed).
+- Environment-variable based configuration for local/dev/prod.
+
+## Tech Stack
+
+- Backend: Python, Flask, Flask-SocketIO, MySQL connector, pygame simulation layer.
+- Frontend: React, Vite, Tailwind CSS, socket.io-client.
+- Database: MySQL.
+
+## Local Setup
+
+### 1) Backend setup
+
 ```bash
-# Ensure Python 3.8+ is installed
-python --version
-
-# Install required packages
-pip install ultralytics opencv-python pillow numpy
+cd smart_traffic
+pip install -r requirements.txt
+copy .env.example .env
+python api_server.py
 ```
 
-### Running the System
+Backend default URL: http://127.0.0.1:5000
+
+### 2) Frontend setup
+
 ```bash
-# Navigate to the smart_traffic_system folder
-cd smart_traffic_system
-
-# Run the main application
-python main.py
+cd smart_traffic_signal_ui
+npm install
+copy .env.example .env
+npm run dev
 ```
 
-### What Happens:
-1. System loads YOLOv8 model
-2. Opens 4 video files (north_side.mp4, south_side.mp4, east_side.mp4, west_side.mp4)
-3. Starts vehicle detection on all sides
-4. Opens GUI window showing all 4 feeds
-5. Begins sequential traffic signal control
+Frontend default URL: http://127.0.0.1:5173
 
----
+## Environment Variables
 
-## ⚙️ How It Works
+### Backend env file
 
-### Sequential Signal Control Algorithm
+Use smart_traffic/.env (based on smart_traffic/.env.example).
 
-```
-1. NORTH side gets GREEN (up to 45 seconds)
-   ├─ Continuously counts vehicles
-   ├─ If vehicles < 3 for 5 seconds → Early switch
-   └─ If 45 seconds reached → Force switch
+Common keys:
 
-2. NORTH goes YELLOW (5 seconds)
+- API_HOST
+- API_PORT
+- API_DEBUG
+- ALLOWED_ORIGIN
+- DB_HOST
+- DB_PORT
+- DB_NAME
+- DB_USER
+- DB_PASSWORD
+- SESSION_TIMEOUT_SECONDS
 
-3. EAST side gets GREEN (up to 45 seconds)
-   └─ Same logic as above
+### Frontend env file
 
-4. SOUTH side gets GREEN
+Use smart_traffic_signal_ui/.env (based on smart_traffic_signal_ui/.env.example).
 
-5. WEST side gets GREEN
+Common keys:
 
-6. Back to NORTH (cycle repeats)
-```
+- VITE_API_BASE_URL
+- VITE_SOCKET_BASE_URL
 
-### Early Clearance Logic
-- If vehicle count drops below **3 vehicles**
-- And stays low for **5 seconds**
-- And minimum time (15s) has passed
-- → **Switch early** to next side
+## Deployment Summary
 
-### Emergency Override
-- If emergency vehicle detected on any side
-- → **Immediate switch** to that side
-- → Green for 60 seconds
+### Backend on Azure App Service
 
----
+- Deploy from smart_traffic folder.
+- Install dependencies from requirements.txt.
+- Startup command: python api_server.py
+- Set App Settings for DB credentials and CORS origin.
+- Set ALLOWED_ORIGIN to your Vercel frontend URL.
+- Keep API_DEBUG=false in production.
 
-## 🎨 GUI Interface
+### Frontend on Vercel
 
-### Layout:
-```
-┌─────────────────────────────────────────────────────┐
-│    🚦 SMART TRAFFIC SIGNAL AUTOMATION SYSTEM        │
-├──────────────────┬──────────────────────────────────┤
-│  NORTH SIDE      │      SOUTH SIDE                  │
-│  [Video Feed]    │      [Video Feed]                │
-│  🔴 Red          │      🟢 Green                    │
-│  🟡 Yellow       │      🟡 Yellow                   │
-│  🟢 Green        │      🔴 Red                      │
-│  Vehicles: 15    │      Vehicles: 8                 │
-│  Time: 35s       │      Time: --s                   │
-├──────────────────┼──────────────────────────────────┤
-│  EAST SIDE       │      WEST SIDE                   │
-│  [Video Feed]    │      [Video Feed]                │
-│  🔴 Red          │      🔴 Red                      │
-│  Vehicles: 12    │      Vehicles: 20                │
-│  Time: --s       │      Time: --s                   │
-├──────────────────┴──────────────────────────────────┤
-│  Status: Signal: NORTH → EAST | Early clearance     │
-└──────────────────────────────────────────────────────┘
-```
+- Root directory: smart_traffic_signal_ui
+- Build command: npm run build
+- Output directory: dist
+- Add Vercel env vars:
+  - VITE_API_BASE_URL=https://<azure-backend>/api
+  - VITE_SOCKET_BASE_URL=https://<azure-backend>
 
----
+## Demo Credentials
 
-## 📊 Configuration
+- officer / officer123
+- admin / admin123
+- viewer / viewer123
 
-Edit [`config.py`](config.py) to customize:
+Change default credentials before public production use.
 
-```python
-# Timing (seconds)
-MAX_GREEN_TIME = 45          # Maximum green duration
-MIN_GREEN_TIME = 15          # Minimum green duration
-YELLOW_TIME = 5              # Yellow light duration
+## Notes
 
-# Traffic Clearance
-CLEARANCE_THRESHOLD = 3      # Vehicles to consider "clear"
-CLEARANCE_WAIT_TIME = 5      # Wait time before early switch
-
-# Detection
-DETECTION_CONFIDENCE = 0.4   # YOLO confidence threshold
-
-# Signal Sequence
-SIGNAL_SEQUENCE = ["NORTH", "EAST", "SOUTH", "WEST"]  # Can be changed
-```
-
----
-
-## 📈 Logging and Analytics
-
-### Log Files Created:
-
-1. **`logs/traffic_system.log`** - Event log
-   ```
-   [2026-01-30 10:15:23] [SYSTEM] Traffic system started
-   [2026-01-30 10:15:58] [SIGNAL] Signal Changed: NORTH → EAST | Duration: 35.2s | Reason: Early clearance
-   [2026-01-30 10:16:15] [EMERGENCY] 🚨 EMERGENCY VEHICLE DETECTED on SOUTH side!
-   ```
-
-2. **`logs/traffic_data.csv`** - Data for analysis
-   ```csv
-   Timestamp,Event_Type,Side,Signal_State,Total_Vehicles,Cars,Trucks,Motorcycles,Emergency,Duration,Reason
-   2026-01-30 10:15:23,VEHICLE_COUNT,NORTH,,15,10,3,2,False,,
-   2026-01-30 10:15:58,SIGNAL_CHANGE,EAST,GREEN,,,,,False,35.2,Early clearance
-   ```
-
----
-
-## 🧪 Testing Checklist
-
-- [x] All 4 videos load successfully
-- [x] Vehicle detection works on all sides
-- [x] Signals rotate sequentially (North → East → South → West)
-- [x] Green light lasts 15-45 seconds
-- [x] Early clearance activates with low traffic
-- [x] Emergency vehicle detection works
-- [x] GUI displays all information correctly
-- [x] Logs are created and updated
-- [x] System handles video loops properly
-
----
-
-## 🛠️ Troubleshooting
-
-### Issue: Videos not loading
-**Solution:** Check that video files are in correct location:
-```
-CS331-software-project/
-└── video/
-    ├── north_side.mp4
-    ├── south_side.mp4
-    ├── east_side.mp4
-    └── west_side.mp4
-```
-
-### Issue: YOLO model not found
-**Solution:** Ensure `yolov8n.pt` is in project root:
-```
-CS331-software-project/
-├── yolov8n.pt
-└── smart_traffic_system/
-```
-
-### Issue: Import errors
-**Solution:** Always run from `smart_traffic_system/` folder:
-```bash
-cd smart_traffic_system
-python main.py
-```
-
----
-
-## 📚 Technologies Used
-
-| Component | Technology |
-|-----------|-----------|
-| Language | Python 3.8+ |
-| AI Model | YOLOv8 (Ultralytics) |
-| Computer Vision | OpenCV |
-| GUI | Tkinter |
-| Video Processing | OpenCV + Threading |
-| Data Logging | CSV + Text logs |
-
----
-
-## 👥 Project Team
-
-**CS331 - Software Engineering Lab**  
-Smart Traffic Signal Automation System
-
----
-
-## 📄 License
-
-This is an academic project for CS331 Software Engineering Lab.
-
----
-
-## 🎓 Assignment Requirements Met
-
-✅ Vehicle detection and counting  
-✅ Dynamic traffic light control  
-✅ Emergency vehicle prioritization  
-✅ Safety timers (min/max green time)  
-✅ Real-time display with countdown  
-✅ Offline operation  
-✅ Multi-camera input support  
-✅ Sequential signal switching  
-✅ Adaptive timing based on traffic density  
-
----
-
-## 📞 Support
-
-For issues or questions:
-1. Check logs in `logs/` folder
-2. Verify video files are present
-3. Ensure all dependencies installed
-4. Check console output for errors
-
----
-
-**🚦 End of Documentation**
+- Assignment documentation remains under assignment/.
+- Folder-level readmes for backend and frontend provide deeper module-specific details.

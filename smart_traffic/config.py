@@ -1,34 +1,97 @@
-"""
-Configuration file for traffic simulation
-Contains all timing and display settings
-"""
+"""Configuration for traffic simulation and API runtime."""
 
 import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover
+    load_dotenv = None
+
+
+def _load_env_file_fallback(path: str):
+    if not os.path.exists(path):
+        return
+
+    with open(path, "r", encoding="utf-8") as env_file:
+        for raw_line in env_file:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            os.environ[key] = value
+
+
+if load_dotenv is not None:
+    load_dotenv(dotenv_path=ENV_PATH, override=True)
+else:
+    _load_env_file_fallback(ENV_PATH)
+
+
+def _env_str(name: str, default: str) -> str:
+    value = os.getenv(name)
+    return default if value is None else value
+
+
+def _env_int(name: str, default: int) -> int:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
+def _env_float(name: str, default: float) -> float:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
 
 # ========================
 # Paths
 # ========================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PHOTO_DIR = os.path.join(BASE_DIR, 'photo')
 
 # ========================
 # Signal Timing (seconds)
 # ========================
-GREEN_LIGHT_DURATION = 15
-YELLOW_LIGHT_DURATION = 4
+GREEN_LIGHT_DURATION = _env_int("GREEN_LIGHT_DURATION", 15)
+YELLOW_LIGHT_DURATION = _env_int("YELLOW_LIGHT_DURATION", 4)
 
 # ========================
 # Traffic Generation
 # ========================
-SPAWN_INTERVAL_MIN = 2.0        # Min seconds between spawns per side
-SPAWN_INTERVAL_MAX = 4.0        # Max seconds between spawns per side
-MAX_VEHICLES_PER_SIDE = 8
-GREEN_START_DELAY = 2.0         # Seconds to wait after green before vehicles move
+# Min seconds between spawns per side
+SPAWN_INTERVAL_MIN = _env_float("SPAWN_INTERVAL_MIN", 2.0)
+# Max seconds between spawns per side
+SPAWN_INTERVAL_MAX = _env_float("SPAWN_INTERVAL_MAX", 4.0)
+MAX_VEHICLES_PER_SIDE = _env_int("MAX_VEHICLES_PER_SIDE", 8)
+# Seconds to wait after green before vehicles move
+GREEN_START_DELAY = _env_float("GREEN_START_DELAY", 2.0)
 
 # ========================
 # Vehicle Properties
 # ========================
-VEHICLE_SPEED = 2               # Pixels per frame (smooth movement)
+# Pixels per frame (smooth movement)
+VEHICLE_SPEED = _env_int("VEHICLE_SPEED", 2)
 
 # Display sizes (width x length) for scaling images
 VEHICLE_DISPLAY_SIZES = {
@@ -81,13 +144,13 @@ LICENSE_PLATE_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 # ========================
 # Display Settings
 # ========================
-FULLSCREEN = False
-RESIZABLE_WINDOW = True
-WINDOW_WIDTH = 1400
-WINDOW_HEIGHT = 850
-MIN_WINDOW_WIDTH = 900
-MIN_WINDOW_HEIGHT = 650
-FPS = 60
+FULLSCREEN = _env_bool("FULLSCREEN", False)
+RESIZABLE_WINDOW = _env_bool("RESIZABLE_WINDOW", True)
+WINDOW_WIDTH = _env_int("WINDOW_WIDTH", 1400)
+WINDOW_HEIGHT = _env_int("WINDOW_HEIGHT", 850)
+MIN_WINDOW_WIDTH = _env_int("MIN_WINDOW_WIDTH", 900)
+MIN_WINDOW_HEIGHT = _env_int("MIN_WINDOW_HEIGHT", 650)
+FPS = _env_int("FPS", 60)
 
 # ========================
 # Colors (RGB)
@@ -104,36 +167,49 @@ COLOR_TEXT = (255, 255, 255)
 # ========================
 # Intersection Layout
 # ========================
-ROAD_WIDTH = 220
+ROAD_WIDTH = _env_int("ROAD_WIDTH", 220)
 # Center of each lane from road center (~55px)
 LANE_OFFSET = ROAD_WIDTH // 4
-SIGNAL_SIZE = 25
-STOP_LINE_OFFSET = 130              # Distance from center to stop line
+SIGNAL_SIZE = _env_int("SIGNAL_SIZE", 25)
+# Distance from center to stop line
+STOP_LINE_OFFSET = _env_int("STOP_LINE_OFFSET", 130)
 # Distance from center to spawn point (near screen edge)
-SPAWN_DISTANCE = 550
+SPAWN_DISTANCE = _env_int("SPAWN_DISTANCE", 550)
 
 # ========================
 # Vehicle Spacing
 # ========================
-MIN_FOLLOWING_DISTANCE = 70         # Minimum gap between vehicles in queue
+# Minimum gap between vehicles in queue
+MIN_FOLLOWING_DISTANCE = _env_int("MIN_FOLLOWING_DISTANCE", 70)
 
 # ========================
 # Emergency Vehicle Settings
 # ========================
 # Pixels before stop-line to trigger preemption
-EMERGENCY_DETECTION_DISTANCE = 350
+EMERGENCY_DETECTION_DISTANCE = _env_int("EMERGENCY_DETECTION_DISTANCE", 350)
 
 # ========================
 # Traffic Violation Settings
 # ========================
-SIDE_LANE_VIOLATION_RATE = 0.015    # ~1 in 67 vehicles (cars/trucks only)
+# ~1 in 67 vehicles (cars/trucks only)
+SIDE_LANE_VIOLATION_RATE = _env_float("SIDE_LANE_VIOLATION_RATE", 0.015)
 
 # ========================
 # MySQL Settings (Traffic Violations)
 # ========================
-DB_HOST = "localhost"
-DB_PORT = 3306
-DB_NAME = "smart_traffic_db"
-DB_USER = "root"
-# DB_PASSWORD = "123Candle123@"
-DB_PASSWORD = "Gajendra_8700"
+DB_HOST = _env_str("DB_HOST", "localhost")
+DB_PORT = _env_int("DB_PORT", 3306)
+DB_NAME = _env_str("DB_NAME", "smart_traffic_db")
+DB_USER = _env_str("DB_USER", "root")
+DB_PASSWORD = _env_str("DB_PASSWORD", "123Candle123@")
+
+# ========================
+# API Server Settings
+# ========================
+API_HOST = _env_str("API_HOST", "0.0.0.0")
+API_PORT = _env_int("API_PORT", _env_int("PORT", 5000))
+API_DEBUG = _env_bool("API_DEBUG", False)
+ALLOWED_ORIGIN = _env_str("ALLOWED_ORIGIN", "*")
+SESSION_TIMEOUT_SECONDS = _env_int("SESSION_TIMEOUT_SECONDS", 15 * 60)
+ENABLE_DESKTOP_SIM_UI = _env_bool("ENABLE_DESKTOP_SIM_UI", False)
+QUIET_HTTP_LOGS = _env_bool("QUIET_HTTP_LOGS", True)

@@ -3,7 +3,8 @@ import { io } from "socket.io-client";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5000/api";
-const SOCKET_BASE = API_BASE.replace(/\/api\/?$/, "");
+const SOCKET_BASE =
+  import.meta.env.VITE_SOCKET_BASE_URL || API_BASE.replace(/\/api\/?$/, "");
 const SIDES = ["NORTH", "EAST", "SOUTH", "WEST"];
 
 const SIGNAL_COLORS = {
@@ -26,6 +27,7 @@ const EMPTY_STATE = {
   crossedByType: { CAR: 0, TRUCK: 0, AMBULANCE: 0 },
   emergency: { active: false, side: null, queue: 0, remaining: 0 },
   events: [],
+  backendUiEnabled: true,
   backendUiRunning: false,
   vehicles: [],
 };
@@ -196,7 +198,6 @@ function App() {
       });
       setBackendUiMessage(payload.message || "Simulation UI launch requested.");
       setError("");
-      // Immediately sync state to pick up backendUiRunning and vehicle data
       await syncState();
     } catch (err) {
       setBackendUiMessage("");
@@ -230,7 +231,8 @@ function App() {
     }
 
     const socket = io(SOCKET_BASE, {
-      transports: ["websocket", "polling"],
+      transports: ["polling"],
+      upgrade: false,
       auth: { token },
     });
     socketRef.current = socket;
@@ -263,7 +265,7 @@ function App() {
 
     return () => {
       socketRef.current = null;
-      socket.disconnect(); 
+      socket.disconnect();
     };
   }, [token, user]);
 
@@ -317,8 +319,14 @@ function App() {
           <div className="flex gap-2">
             <button
               type="button"
-              className="rounded-lg bg-slate-700 px-3 py-2 text-xs uppercase tracking-[0.16em] text-slate-100 hover:bg-slate-600"
+              className="rounded-lg bg-slate-700 px-3 py-2 text-xs uppercase tracking-[0.16em] text-slate-100 hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
               onClick={openBackendUi}
+              disabled={!state.backendUiEnabled || loading}
+              title={
+                state.backendUiEnabled
+                  ? "Open local desktop simulation window"
+                  : "Desktop simulation is disabled in backend environment"
+              }
             >
               Open Backend UI
             </button>
@@ -346,6 +354,11 @@ function App() {
               Simulation UI: Running
             </span>
           )}
+          {!state.backendUiEnabled && (
+            <span className="rounded-full bg-amber-500/20 px-3 py-1 text-amber-200">
+              Desktop UI: Disabled
+            </span>
+          )}
           <button
             type="button"
             className="rounded-full bg-slate-700 px-3 py-1 text-slate-100 hover:bg-slate-600 disabled:opacity-60"
@@ -355,7 +368,6 @@ function App() {
             {loading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
-
         {backendUiMessage && (
           <p className="mt-3 text-sm text-emerald-300">{backendUiMessage}</p>
         )}
@@ -977,7 +989,8 @@ function ViolationsPanel({ report, onRefresh, token }) {
       return Number.isNaN(parsed) ? 0 : parsed;
     };
 
-    const compareText = (a, b) => String(a || "").localeCompare(String(b || ""));
+    const compareText = (a, b) =>
+      String(a || "").localeCompare(String(b || ""));
     const compareBool = (a, b) => Number(Boolean(a)) - Number(Boolean(b));
 
     const sorted = [...rows].sort((a, b) => {
@@ -1085,7 +1098,9 @@ function ViolationsPanel({ report, onRefresh, token }) {
             <option value="name_asc">Name (A-Z)</option>
             <option value="name_desc">Name (Z-A)</option>
             <option value="action_taken_first">Action (Taken First)</option>
-            <option value="action_not_taken_first">Action (Not Taken First)</option>
+            <option value="action_not_taken_first">
+              Action (Not Taken First)
+            </option>
             <option value="type_asc">Vehicle Type</option>
             <option value="side_asc">Side</option>
             <option value="violation_asc">Violation Type</option>
@@ -1102,7 +1117,9 @@ function ViolationsPanel({ report, onRefresh, token }) {
         </div>
       </div>
 
-      {panelMessage && <p className="mt-3 text-sm text-emerald-300">{panelMessage}</p>}
+      {panelMessage && (
+        <p className="mt-3 text-sm text-emerald-300">{panelMessage}</p>
+      )}
       {panelError && <p className="mt-3 text-sm text-rose-300">{panelError}</p>}
 
       {!report && <p className="mt-3 text-slate-300">Loading report data...</p>}
@@ -1157,8 +1174,12 @@ function ViolationsPanel({ report, onRefresh, token }) {
                         <td className="px-3 py-2">{row.vehicleType}</td>
                         <td className="px-3 py-2">{row.side}</td>
                         <td className="px-3 py-2">{row.violationType}</td>
-                        <td className="px-3 py-2">{row.inMiddle ? "Yes" : "No"}</td>
-                        <td className="px-3 py-2">{row.outMiddle ? "Yes" : "No"}</td>
+                        <td className="px-3 py-2">
+                          {row.inMiddle ? "Yes" : "No"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {row.outMiddle ? "Yes" : "No"}
+                        </td>
                         <td className="px-3 py-2">
                           <select
                             value={isTaken ? "taken" : "not_taken"}
