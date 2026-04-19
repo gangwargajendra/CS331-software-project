@@ -1,0 +1,93 @@
+LAB-9 ADDITIONAL MODULE TEST EXECUTION LOG
+==========================================================
+Started : 2026-04-19T23:55:24
+Finished: 2026-04-19T23:55:26
+Total   : 14
+Passed  : 12
+Failed  : 2
+Blocked : 0
+
+[TC-API-01] (api_server) GET /api/state returns 401 without bearer token
+Input    : No Authorization header
+Expected : HTTP 401 Unauthorized
+Actual   : status=401
+Status   : Pass
+----------------------------------------------------------
+[TC-API-02] (api_server) VIEW_ONLY role cannot access admin system-health endpoint
+Input    : GET /api/system-health with viewer token
+Expected : HTTP 403 Forbidden
+Actual   : status=403
+Status   : Pass
+----------------------------------------------------------
+[TC-API-03] (api_server) Officer can change speed with numeric value
+Input    : POST /api/control/speed speed=1.5
+Expected : HTTP 200 and state.speed=1.5
+Actual   : status=200, speed=1.5
+Status   : Pass
+----------------------------------------------------------
+[TC-API-04] (api_server) Emergency endpoint rejects invalid side values
+Input    : POST /api/control/emergency side=UPWARD
+Expected : HTTP 400
+Actual   : status=400, body={'error': 'side must be one of NORTH/EAST/SOUTH/WEST', 'ok': False}
+Status   : Pass
+----------------------------------------------------------
+[TC-API-05] (api_server) Running flag should parse string false as False
+Input    : POST /api/control/running with {"running": "false"}
+Expected : set_running called with False
+Actual   : status=200, set_running_arg=True
+Status   : Fail
+----------------------------------------------------------
+[TC-API-06] (api_server) Emergency endpoint should reject non-numeric duration safely
+Input    : POST /api/control/emergency with {"duration": "abc"}
+Expected : HTTP 400 with validation error (not 500)
+Actual   : status=500
+Status   : Fail
+----------------------------------------------------------
+[TC-EH-01] (emergency_handler) Ambulance on already-green side should not require signal preemption
+Input    : Current side NORTH green; ambulance detected on NORTH
+Expected : active=True, emergency_side=NORTH, needs_signal_change=False
+Actual   : active=True, side=NORTH, preemption=False
+Status   : Pass
+----------------------------------------------------------
+[TC-EH-02] (emergency_handler) Emergency queue serves ambulances in FCFS order
+Input    : Queue=[A1(SOUTH), A2(EAST)]
+Expected : First served vehicle should be A1 on SOUTH
+Actual   : served_first=A1, side=SOUTH
+Status   : Pass
+----------------------------------------------------------
+[TC-VEH-01] (vehicle) Distance from stop line is positive while approaching for all sides
+Input    : Set positions 10px before each stop line
+Expected : All distances > 0
+Actual   : N=10, S=10, E=10, W=10
+Status   : Pass
+----------------------------------------------------------
+[TC-VEH-02] (vehicle) Generated license plates remain unique in sample run
+Input    : Generate 250 plates
+Expected : 250 unique values
+Actual   : unique_count=250
+Status   : Pass
+----------------------------------------------------------
+[TC-TG-01] (traffic_generator) Generator returns None when side queue already at max limit
+Input    : current_count == MAX_VEHICLES_PER_SIDE
+Expected : No vehicle generated (None)
+Actual   : returned=None
+Status   : Pass
+----------------------------------------------------------
+[TC-TG-02] (traffic_generator) Generator spawns vehicle when cooldown elapsed
+Input    : Force elapsed > interval for NORTH
+Expected : Vehicle instance returned
+Actual   : generated=True, type=TRUCK
+Status   : Pass
+----------------------------------------------------------
+[TC-SI-01] (smart_intersection) Queued count excludes crossed and post-stopline vehicles
+Input    : Mix of queued/passed/crossed dummy vehicles
+Expected : NORTH=1, EAST=1, SOUTH=0, WEST=0
+Actual   : counts={'NORTH': 1, 'SOUTH': 0, 'EAST': 1, 'WEST': 0}
+Status   : Pass
+----------------------------------------------------------
+[TC-VL-01] (violation_logger) DB logger disables itself gracefully when connector unavailable
+Input    : Force mysql module to None and log twice
+Expected : No crash; logger disabled after first failure
+Actual   : disabled=True, warned=True
+Status   : Pass
+----------------------------------------------------------
