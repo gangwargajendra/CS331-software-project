@@ -1,0 +1,56 @@
+SMART SIGNAL CONTROLLER TEST EXECUTION LOG
+====================================================
+Started : 2026-04-20T00:17:20
+Finished: 2026-04-20T00:17:20
+Total   : 8
+Passed  : 5
+Failed  : 3
+
+[TC-SSC-01] Controller initializes with NORTH green and others red
+Input    : Instantiate SmartSignalController()
+Expected : NORTH=GREEN, EAST/SOUTH/WEST=RED
+Actual   : N=GREEN, E=RED, S=RED, W=RED
+Status   : Pass
+----------------------------------------------------
+[TC-SSC-02] After green duration, current and next sides become YELLOW
+Input    : elapsed > green_duration, queued NORTH > 0
+Expected : NORTH=YELLOW, EAST=YELLOW, yellow_pass_side=NORTH
+Actual   : NORTH=YELLOW, EAST=YELLOW, yellow_pass_side=NORTH
+Status   : Pass
+----------------------------------------------------
+[TC-SSC-03] After yellow duration, next side turns GREEN and pointer advances
+Input    : elapsed > yellow_duration in YELLOW phase
+Expected : current_side=EAST, NORTH=RED, EAST=GREEN
+Actual   : current_side=EAST, NORTH=RED, EAST=GREEN
+Status   : Pass
+----------------------------------------------------
+[TC-SSC-04] Controller switches early when current queue is empty
+Input    : queued_counts[NORTH]=0 and elapsed < green_duration
+Expected : NORTH=YELLOW and EAST=YELLOW
+Actual   : NORTH=YELLOW, EAST=YELLOW
+Status   : Pass
+----------------------------------------------------
+[TC-SSC-05] Controller stays GREEN if queue exists and duration not exceeded
+Input    : queued_counts[NORTH]=2 and elapsed < green_duration
+Expected : NORTH=GREEN and EAST=RED
+Actual   : NORTH=GREEN, EAST=RED
+Status   : Pass
+----------------------------------------------------
+[TC-SSC-06] Calling update(None) should preserve GREEN until timer (robust default)
+Input    : queued_counts=None on first frame
+Expected : NORTH remains GREEN and EAST remains RED
+Actual   : NORTH=YELLOW, EAST=YELLOW
+Status   : Fail
+----------------------------------------------------
+[TC-SSC-07] Emergency side should be accepted in lowercase input
+Input    : start_emergency("north")
+Expected : Emergency starts for NORTH without exception
+Actual   : Exception: ValueError: 'north' is not in list
+Status   : Fail
+----------------------------------------------------
+[TC-SSC-08] Invalid emergency side should be rejected
+Input    : start_emergency("UPWARD")
+Expected : Raise ValueError('Invalid side')
+Actual   : No exception raised
+Status   : Fail
+----------------------------------------------------

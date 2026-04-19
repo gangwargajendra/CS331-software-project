@@ -1,0 +1,103 @@
+LAB-9 TEST EXECUTION LOG
+=================================================
+Date: 2026-04-20
+Total Cases: 16
+Passed: 13
+Failed: 3
+
+[TC-01] SmartSignalController initialization
+Input: Instantiate SmartSignalController()
+Expected: NORTH=GREEN, EAST/SOUTH/WEST=RED
+Actual: N=GREEN, E=RED, S=RED, W=RED
+Status: Pass
+--------------------------------------------------
+[TC-02] GREEN->YELLOW timing transition
+Input: elapsed > green_duration, queued NORTH > 0
+Expected: NORTH=YELLOW, EAST=YELLOW, yellow_pass_side=NORTH
+Actual: NORTH=YELLOW, EAST=YELLOW, yellow_pass_side=NORTH
+Status: Pass
+--------------------------------------------------
+[TC-03] YELLOW->next GREEN transition
+Input: elapsed > yellow_duration in YELLOW phase
+Expected: current_side=EAST, NORTH=RED, EAST=GREEN
+Actual: current_side=EAST, NORTH=RED, EAST=GREEN
+Status: Pass
+--------------------------------------------------
+[TC-04] Early switch on empty queue
+Input: queued_counts[NORTH]=0 and elapsed < green_duration
+Expected: NORTH=YELLOW and EAST=YELLOW
+Actual: NORTH=YELLOW, EAST=YELLOW
+Status: Pass
+--------------------------------------------------
+[TC-05] No early switch when queue exists
+Input: queued_counts[NORTH]=2 and elapsed < green_duration
+Expected: NORTH=GREEN and EAST=RED
+Actual: NORTH=GREEN, EAST=RED
+Status: Pass
+--------------------------------------------------
+[TC-06] update(None) robust default behavior
+Input: queued_counts=None on first frame
+Expected: NORTH remains GREEN and EAST remains RED
+Actual: NORTH=YELLOW, EAST=YELLOW
+Status: Fail
+--------------------------------------------------
+[TC-07] Lowercase emergency side input
+Input: start_emergency("north")
+Expected: Emergency starts for NORTH without exception
+Actual: Exception: ValueError: 'north' is not in list
+Status: Fail
+--------------------------------------------------
+[TC-08] Invalid emergency side validation
+Input: start_emergency("UPWARD")
+Expected: Raise ValueError('Invalid side')
+Actual: No exception raised
+Status: Fail
+--------------------------------------------------
+[TC-09] Emergency without preemption when side already green
+Input: Current side NORTH green; ambulance on NORTH
+Expected: active=True, emergency_side=NORTH, needs_signal_change=False
+Actual: active=True, side=NORTH, preemption=False
+Status: Pass
+--------------------------------------------------
+[TC-10] Emergency FCFS queue order
+Input: Queue=[A1(SOUTH), A2(EAST)]
+Expected: First served should be A1 on SOUTH
+Actual: served_first=A1, side=SOUTH
+Status: Pass
+--------------------------------------------------
+[TC-11] Vehicle stop-line distance for all sides
+Input: Set positions 10px before each stop line
+Expected: All distances > 0
+Actual: N=10, S=10, E=10, W=10
+Status: Pass
+--------------------------------------------------
+[TC-12] License plate uniqueness
+Input: Generate 250 plates
+Expected: 250 unique values
+Actual: unique_count=250
+Status: Pass
+--------------------------------------------------
+[TC-13] Generator max queue blocking
+Input: current_count == MAX_VEHICLES_PER_SIDE
+Expected: No vehicle generated (None)
+Actual: returned=None
+Status: Pass
+--------------------------------------------------
+[TC-14] Generator spawn after cooldown
+Input: Force elapsed > interval for NORTH
+Expected: Vehicle instance returned
+Actual: generated=True, type=TRUCK
+Status: Pass
+--------------------------------------------------
+[TC-15] SmartIntersection queued count filter
+Input: Mix of queued/passed/crossed dummy vehicles
+Expected: NORTH=1, EAST=1, SOUTH=0, WEST=0
+Actual: counts={'NORTH': 1, 'SOUTH': 0, 'EAST': 1, 'WEST': 0}
+Status: Pass
+--------------------------------------------------
+[TC-16] Violation logger DB-failure resilience
+Input: Force mysql module to None and log twice
+Expected: No crash; logger disabled after first failure
+Actual: disabled=True, warned=True
+Status: Pass
+--------------------------------------------------

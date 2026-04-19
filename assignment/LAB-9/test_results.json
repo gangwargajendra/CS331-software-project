@@ -1,0 +1,73 @@
+{
+  "started_at": "2026-04-20T00:17:20",
+  "finished_at": "2026-04-20T00:17:20",
+  "total": 8,
+  "passed": 5,
+  "failed": 3,
+  "results": [
+    {
+      "test_case_id": "TC-SSC-01",
+      "description": "Controller initializes with NORTH green and others red",
+      "input_data": "Instantiate SmartSignalController()",
+      "expected_output": "NORTH=GREEN, EAST/SOUTH/WEST=RED",
+      "actual_output": "N=GREEN, E=RED, S=RED, W=RED",
+      "status": "Pass"
+    },
+    {
+      "test_case_id": "TC-SSC-02",
+      "description": "After green duration, current and next sides become YELLOW",
+      "input_data": "elapsed > green_duration, queued NORTH > 0",
+      "expected_output": "NORTH=YELLOW, EAST=YELLOW, yellow_pass_side=NORTH",
+      "actual_output": "NORTH=YELLOW, EAST=YELLOW, yellow_pass_side=NORTH",
+      "status": "Pass"
+    },
+    {
+      "test_case_id": "TC-SSC-03",
+      "description": "After yellow duration, next side turns GREEN and pointer advances",
+      "input_data": "elapsed > yellow_duration in YELLOW phase",
+      "expected_output": "current_side=EAST, NORTH=RED, EAST=GREEN",
+      "actual_output": "current_side=EAST, NORTH=RED, EAST=GREEN",
+      "status": "Pass"
+    },
+    {
+      "test_case_id": "TC-SSC-04",
+      "description": "Controller switches early when current queue is empty",
+      "input_data": "queued_counts[NORTH]=0 and elapsed < green_duration",
+      "expected_output": "NORTH=YELLOW and EAST=YELLOW",
+      "actual_output": "NORTH=YELLOW, EAST=YELLOW",
+      "status": "Pass"
+    },
+    {
+      "test_case_id": "TC-SSC-05",
+      "description": "Controller stays GREEN if queue exists and duration not exceeded",
+      "input_data": "queued_counts[NORTH]=2 and elapsed < green_duration",
+      "expected_output": "NORTH=GREEN and EAST=RED",
+      "actual_output": "NORTH=GREEN, EAST=RED",
+      "status": "Pass"
+    },
+    {
+      "test_case_id": "TC-SSC-06",
+      "description": "Calling update(None) should preserve GREEN until timer (robust default)",
+      "input_data": "queued_counts=None on first frame",
+      "expected_output": "NORTH remains GREEN and EAST remains RED",
+      "actual_output": "NORTH=YELLOW, EAST=YELLOW",
+      "status": "Fail"
+    },
+    {
+      "test_case_id": "TC-SSC-07",
+      "description": "Emergency side should be accepted in lowercase input",
+      "input_data": "start_emergency(\"north\")",
+      "expected_output": "Emergency starts for NORTH without exception",
+      "actual_output": "Exception: ValueError: 'north' is not in list",
+      "status": "Fail"
+    },
+    {
+      "test_case_id": "TC-SSC-08",
+      "description": "Invalid emergency side should be rejected",
+      "input_data": "start_emergency(\"UPWARD\")",
+      "expected_output": "Raise ValueError('Invalid side')",
+      "actual_output": "No exception raised",
+      "status": "Fail"
+    }
+  ]
+}
